@@ -1,0 +1,105 @@
+package main
+
+import (
+	"fmt"
+	"html/template"
+	"log"
+	"log/slog"
+	"net/http"
+	"sync/atomic"
+	"time"
+)
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	slog.Info("󰊕 middlewareMetricsInc called")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		hit := cfg.fileserverHits.Load()
+		slog.Info("󰊕 middlewareMetricsInc hit", "hit", hit)
+		next.ServeHTTP(w, r)
+	})
+}
+
+const (
+	filepathRoot = http.Dir(".")
+	port         = "8080"
+)
+
+func main() {
+	// ServeMux in Go indeed acts as an orchestrator or router for incoming HTTP requests. It's responsible for directing each request to the appropriate handler
+	mux := http.NewServeMux()
+
+	// http.Server allows us to define ther server's characteristics
+	// including hook in our server's handler, ie ServeMux or NewServeMux
+	s := &http.Server{
+		Addr:           ":" + port,
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	config := apiConfig{}
+
+	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.NotFound(w, r)
+			return
+		}
+		config.resetHitsHandler(w, r)
+	}
+
+	// mux.Handle("POST /admin/reset", http.HandlerFunc(config.resetHitsHandler))
+	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.NotFound(w, r)
+			return
+		}
+		config.resetHitsHandler(w, r)
+	})
+	mux.Handle("GET /admin/metrics", http.HandlerFunc(config.fileServerHitsHandler))
+
+	mux.Handle("/app/", config.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(filepathRoot))))
+	mux.Handle("/app/assets/", config.middlewareMetricsInc(http.StripPrefix("/app/assets/", http.FileServer(http.Dir("./assets")))))
+
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(s.ListenAndServe())
+}
+
+func (cfg *apiConfig) fileServerHitsHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	v := cfg.fileserverHits.Load()
+
+	tmpl := `
+		<html>
+			<body>
+				<h1>Welcome, Chirpy Admin</h1>
+				<p>Chirpy has been visited {{.}} times!</p>
+			</body>
+		</html>
+		`
+	t, err := template.New("welcome").Parse(tmpl)
+	if err != nil {
+		panic(fmt.Sprintf("⚠️ Error parsing template: %v", err))
+	}
+
+	err = t.Execute(w, v)
+	if err != nil {
+		slog.Error("Error executing template", "error", err)
+	}
+}
+
+func (cfg *apiConfig) resetHitsHandler(w http.ResponseWriter, _ *http.Request) {
+	cfg.fileserverHits.Store(0)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte("Hits reset to 0"))
+}
