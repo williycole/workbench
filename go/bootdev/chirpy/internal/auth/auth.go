@@ -102,3 +102,20 @@ func MakeRefreshToken() (string, error) {
 	s := hex.EncodeToString(key)
 	return s, nil
 }
+
+// GetAPIKey returns the value of the X-API-Key header
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("no Authorization header found")
+	}
+	const prefix = "ApiKey "
+	if !strings.HasPrefix(authHeader, prefix) {
+		return "", errors.New("error Authorization header must start with 'ApiKey '")
+	}
+	apiKey := strings.TrimSpace(strings.TrimPrefix(authHeader, prefix))
+	if apiKey == "" {
+		return "", errors.New("error API key is empty")
+	}
+	return apiKey, nil
+}

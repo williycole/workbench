@@ -29,7 +29,9 @@ func main() {
 	}
 	dbQueries := database.New(db)
 	jwt := os.Getenv("JWT_SECRET")
-	config := api.ApiConfig{DbQueries: dbQueries, Platform: platform, JWTSecret: jwt}
+
+	polkaKey := os.Getenv("POLKA_KEY")
+	cfg := api.ApiConfig{DbQueries: dbQueries, Platform: platform, JWTSecret: jwt, PolkaKey: polkaKey}
 	// ServeMux in Go indeed acts as an orchestrator or router for incoming HTTP requests. It's responsible for directing each request to the appropriate handler
 	mux := http.NewServeMux()
 	// http.Server allows us to define ther server's characteristics
@@ -47,67 +49,20 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
-	mux.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
-		config.LoginUser(w, r)
-	})
-	mux.HandleFunc("/api/refresh", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
-		config.RefreshToken(w, r)
-	})
-	mux.HandleFunc("/api/revoke", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
-		config.RevokeRefreshToken(w, r)
-	})
-
-	mux.HandleFunc("/api/chirps", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			config.CreateChirp(w, r)
-		case http.MethodGet:
-			config.GetAllChirps(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
-	mux.HandleFunc("/api/chirps/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			config.GetChirp(w, r)
-			return
-		}
-		http.NotFound(w, r)
-	})
+	// -- Api Routes
+	mux.HandleFunc("/api/login", cfg.LoginUser)
+	mux.HandleFunc("/api/refresh", cfg.RefreshToken)
+	mux.HandleFunc("/api/revoke", cfg.RevokeRefreshToken)
+	mux.HandleFunc("/api/chirps", cfg.HandleChirps)
+	mux.HandleFunc("/api/chirps/", cfg.HandleChirpWithOptions)
+	mux.HandleFunc("/api/users", cfg.HandleUsers)
+	mux.HandleFunc("/api/polka/webhooks", cfg.UpgradeUserToChirpyRed)
 	// -- Admin Routes
-	mux.Handle("GET /admin/metrics", http.HandlerFunc(config.FileServerHitsHandler))
-	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.NotFound(w, r)
-			return
-		}
-		config.ResetHits(w, r)
-	})
-	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			config.CreateUser(w, r)
-		case http.MethodPut:
-			config.HandlerUsersUpdate(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
+	mux.Handle("GET /admin/metrics", http.HandlerFunc(cfg.FileServerHitsHandler))
+	mux.HandleFunc("/admin/reset", cfg.ResetHits)
 	// -- App Routes
-	mux.Handle("/app/", config.MiddlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(filepathRoot))))
-	mux.Handle("/app/assets/", config.MiddlewareMetricsInc(http.StripPrefix("/app/assets/", http.FileServer(http.Dir("./assets")))))
+	mux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(filepathRoot))))
+	mux.Handle("/app/assets/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app/assets/", http.FileServer(http.Dir("./assets")))))
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(s.ListenAndServe())
 }
