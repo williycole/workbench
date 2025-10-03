@@ -111,9 +111,11 @@ local function buildXRandomCoords(numOfRects)
 	local coords = {}
 
 	for i = 1, numOfRects do
-		local position = { math.random(0, 20), math.random(0, 20) }
+		local position = { love.math.random(0, 20), love.math.random(0, 20) }
 
 		table.insert(coords, position)
+		print("inserted coords:" .. i .. " x:" .. position[1] .. "y:" .. position[2])
+
 		i = i + 1
 	end
 
@@ -121,7 +123,7 @@ local function buildXRandomCoords(numOfRects)
 end
 
 local t = buildXRandomCoords(10)
-for i, pos in ipairs(t) do
-	print("coords:" .. i .. " x:" .. pos[1] .. "y:" .. pos[2])
-end
+-- for i, pos in ipairs(t) do
+-- print("coords:" .. i .. " x:" .. pos[i][1] .. "y:" .. pos[i][2])
+-- end
 print("")
