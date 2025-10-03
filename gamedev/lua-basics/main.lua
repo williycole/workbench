@@ -103,3 +103,25 @@ local mod = require("./tables")
 local grid = mod.MkGrid(3, 4)
 mod.PrettyPrintGrid(grid)
 mod.PrettyPrintGrid(mod.MkGrid(2, 2))
+print("")
+
+print("heres how to access nested tables\n")
+-- local t = { { 1, 2 }, { 13, 14 } }
+local function buildXRandomCoords(numOfRects)
+	local coords = {}
+
+	for i = 1, numOfRects do
+		local position = { math.random(0, 20), math.random(0, 20) }
+
+		table.insert(coords, position)
+		i = i + 1
+	end
+
+	return coords
+end
+
+local t = buildXRandomCoords(10)
+for i, pos in ipairs(t) do
+	print("coords:" .. i .. " x:" .. pos[1] .. "y:" .. pos[2])
+end
+print("")
