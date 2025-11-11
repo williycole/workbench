@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 func main() {
@@ -18,4 +19,11 @@ func Reverse(s string) string {
 		result = string(v) + result
 	}
 	return result
+}
+
+// easy, got done in a matter of seconds
+func tolower() {
+	s := "Hello, World!!!"
+	s = strings.ToLower(s)
+	fmt.Println(s)
 }

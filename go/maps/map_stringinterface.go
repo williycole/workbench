@@ -1,4 +1,4 @@
-package mapstringinterface
+package maps
 
 import (
 	"encoding/json"
