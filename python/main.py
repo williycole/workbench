@@ -1,6 +1,3 @@
-from tabnanny import check
-
-
 def calculate_experience_points(level):
     xp = 0
     for i in range(level):
