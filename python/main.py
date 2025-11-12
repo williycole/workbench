@@ -29,6 +29,7 @@ def word_frequency():
 
 def find_dup_integers():
     ints = {1, 2, 3, 2, 4, 5, 3, 3}
+    return ints
 
 
 def get_odd_numbers(num):
@@ -60,9 +61,16 @@ def reverse_list(items):
     return reversed_list
 
 
-# Expected:
-# * filtered messages: ['well it', 'the whole thing', 'kill that knight, it', 'get him!', 'donkey kong', 'oh come on, get them', 'run away from the baddies']
-# * words removed: [1, 2, 1, 0, 0, 0, 1]
+def get_character_record(name, server, level, rank):
+    return {
+        "name": name,
+        "server": server,
+        "level": level,
+        "rank": rank,
+        "id": f"{name}#{server}",
+    }
+
+
 def filter_messages(messages):
     cleanMessages = []
     dangs = []
@@ -94,6 +102,88 @@ def check_ingredient_match(recipe, ingredients):
     return float(f"{percentage:.2f}"), missing
 
 
+def get_most_common_enemy(enemies_dict):
+    if not enemies_dict:
+        return None
+
+    common_val = max(enemies_dict.values())
+    for key, value in enemies_dict.items():
+        if value == common_val:
+            return key
+        else:
+            return None
+
+
+def get_quest_status(progress):
+    character = progress["entity"]["character"]
+    q = character.get("quests").get("bridge_run").get("status")
+    return q
+
+
+def merge(dict1, dict2):
+    merged_dict = {}
+    for key, value in dict1.items():
+        merged_dict.update({key: value})
+    for key, value in dict2.items():
+        merged_dict.update({key: value})
+    return merged_dict
+
+
+def remove_duplicates(spells):
+    seen_spells = set(spells)
+    u_spells = []
+    for spell in seen_spells:
+        u_spells.append(spell)
+    return u_spells
+
+
+def count_vowels(text):
+    v_count = 0
+    words = text.split()
+
+    unique_vowels = set()
+    for word in words:
+        for letter in word:
+            if letter in "aeiou" or letter in "AEIOU":
+                v_count += 1
+                unique_vowels.update(letter)
+    return v_count, unique_vowels
+
+
+def number_sum(n):
+    tally = 0
+    for i in range(1, n + 1):
+        tally += i
+    return tally
+
+
+def find_min(nums):
+    nums.sort()
+    return nums[0]
+
+
+def remove_nonints(nums):
+    ints = []
+    for i in nums:
+        if type(i) is int:
+            ints.append(i)
+    return ints
+
+
+def pyhonic_remove_nonints(nums):
+    # note: see how we this is done in the [],
+    # that means the result is getting added in []
+    return [x for x in nums if type(x) is int]
+
+
+def factorial(n):
+    if n == 0 or n == 1:
+        return 1
+    f = n * factorial((n - 1))
+    print(f)
+    return f
+
+
 def main():
     # word_frequency()
     # print(calculate_experience_points(4))
@@ -114,17 +204,37 @@ def main():
     #         ]
     #     )
     # )
-
-    # Inputs: ['Mike', 'Walter', 'Skyler', 'Tuco']
-    # Expected: (['Mike', 'Skyler'], ['Walter', 'Tuco'])
     # print(split_players_into_teams(["Mike", "Walter", "Skyler", "Tuco"]))
-
-    recipe = ["Dragon Scale", "Unicorn Hair", "Phoenix Feather", "Troll Tusk"]
-    ingredients = ["Dragon Scale", "Phoenix Feather", "Troll Tusk"]
-    percentage, missing_ingredients = check_ingredient_match(recipe, ingredients)
-
-    print('Expected : 75.00 ["Unicorn Hair"]"')
-    print(f"Actual: {percentage}, {missing_ingredients}")
+    # recipe = ["Dragon Scale", "Unicorn Hair", "Phoenix Feather", "Troll Tusk"]
+    # ingredients = ["Dragon Scale", "Phoenix Feather", "Troll Tusk"]
+    # percentage, missing_ingredients = check_ingredient_match(recipe, ingredients)
+    # print('Expected : 75.00 ["Unicorn Hair"]"')
+    # print(f"Actual: {percentage}, {missing_ingredients}")
+    # print(get_most_common_enemy({}))
+    # progress = {
+    #     "entity": {
+    #         "character": {
+    #             "name": "Shallan",
+    #             "quests": {
+    #                 "bridge_run": {
+    #                     "status": "Completed",
+    #                 },
+    #                 "talk_to_syl": {
+    #                     "status": "In Progress",
+    #                 },
+    #             },
+    #         }
+    #     }
+    # }
+    # print(get_quest_status(progress))
+    # text = "cat dog boiii"
+    # print(count_vowels(text))
+    # print(number_sum(5))
+    # print(find_min([1, 5, 3, 2, -1, 5, 3]))
+    # nums = ["200", 300, 2, False, "something", 7, "something else"]
+    # print(remove_nonints(nums))
+    # print(pyhonic_remove_nonints(nums))
+    print(factorial(5))
 
 
 if __name__ == "__main__":
