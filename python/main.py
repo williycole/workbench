@@ -184,6 +184,24 @@ def factorial(n):
     return f
 
 
+def area_sum(rectangle):
+    sum = 0
+    for rect in rectangle:
+        h = rect["height"]
+        w = rect["width"]
+        s = h * w
+        sum += s
+    return sum
+
+
+def divide_list(nums, divisor):
+    return [num / divisor for num in nums]
+
+
+def join_strings(strings):
+    return ",".join(strings)
+
+
 def main():
     # word_frequency()
     # print(calculate_experience_points(4))
@@ -234,7 +252,11 @@ def main():
     # nums = ["200", 300, 2, False, "something", 7, "something else"]
     # print(remove_nonints(nums))
     # print(pyhonic_remove_nonints(nums))
-    print(factorial(5))
+    # print(factorial(5))
+    # rectangles = [{"height": 5, "width": 6}, {"height": 4, "width": 7}]
+    # print(area_sum(rectangles))
+    # print(divide_list([1, 2, 3, 4, 5], 2))
+    print(join_strings(["dog", "bat", "cat"]))
 
 
 if __name__ == "__main__":
