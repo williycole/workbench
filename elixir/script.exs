@@ -11,7 +11,7 @@ height = 190.47
 height_sci = 1.9047e2
 # Boolean
 adult? = true
-# Atom
+# Atom 
 status = :active
 # The 'None/null/Nil' value
 address = nil
