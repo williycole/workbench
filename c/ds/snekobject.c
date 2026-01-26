@@ -23,6 +23,7 @@ void refcount_free(snek_object_t *obj) {
       refcount_dec(obj->data.v_array.elements[i]);
     }
     free(obj->data.v_array.elements);
+    break;
   }
   default:
     assert(false);
@@ -63,12 +64,14 @@ bool snek_array_set(snek_object_t *snek_obj, size_t index,
       snek_obj->data.v_array.size <= index) {
     return false;
   }
-  snek_obj->data.v_array.elements[index] = value;
+
+  // Decrement old element's refcount if replacing
   if (snek_obj->data.v_array.elements[index] != NULL) {
-    refcount_inc(snek_obj->data.v_array.elements[index]);
-  } else {
-    refcount_inc(snek_obj->data.v_array.elements[index]);
+    refcount_dec(snek_obj->data.v_array.elements[index]);
   }
+  // Store new element and increment its refcount
+  snek_obj->data.v_array.elements[index] = value;
+  refcount_inc(value);
   return true;
 }
 
@@ -172,6 +175,7 @@ snek_object_t *new_snek_array(size_t size) {
   if (obj == NULL) {
     return NULL;
   }
+  obj->refcount = 1;
 
   // init the pointers to the array
   snek_object_t **array = calloc(size, sizeof(snek_object_t *));
@@ -211,6 +215,7 @@ snek_object_t *new_snek_integer(int value) {
   if (obj == NULL) {
     return NULL;
   }
+  obj->refcount = 1;
 
   obj->kind = INTEGER;
   obj->data.v_int = value;
@@ -222,6 +227,7 @@ snek_object_t *new_snek_float(float value) {
   if (obj == NULL) {
     return NULL;
   }
+  obj->refcount = 1;
 
   obj->kind = FLOAT;
   obj->data.v_float = value;
@@ -233,6 +239,7 @@ snek_object_t *new_snek_string(char *value) {
   if (obj == NULL) {
     return NULL;
   }
+  obj->refcount = 1;
 
   int len = strlen(value);
   // NOTE: we have a size already and this isn't a type
