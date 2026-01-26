@@ -3,6 +3,16 @@
 #include <string.h>
 
 typedef struct SnekObject snek_object_t;
+void refcount_inc(snek_object_t *obj);
+void refcount_dec(snek_object_t *obj);
+void refcount_free(snek_object_t *obj);
+
+// snek_object_t *_new_snek_object();
+// bool snek_array_set(snek_object_t *snek_obj, size_t index,
+//                     snek_object_t *value);
+// snek_object_t *snek_array_get(snek_object_t *snek_obj, size_t index);
+// int snek_length(snek_object_t *obj);
+// snek_object_t *snek_add(snek_object_t *a, snek_object_t *b);
 
 typedef struct SnekVector {
   snek_object_t *x;
@@ -34,6 +44,7 @@ typedef union SnekObjectData {
 typedef struct SnekObject {
   snek_object_kind_t kind;
   snek_object_data_t data;
+  int refcount;
 } snek_object_t;
 
 snek_object_t *new_snek_integer(int value);
@@ -42,8 +53,3 @@ snek_object_t *new_snek_string(char *value);
 snek_object_t *new_snek_vector3(snek_object_t *x, snek_object_t *y,
                                 snek_object_t *z);
 snek_object_t *new_snek_array(size_t size);
-bool snek_array_set(snek_object_t *snek_obj, size_t index,
-                    snek_object_t *value);
-snek_object_t *snek_array_get(snek_object_t *snek_obj, size_t index);
-int snek_length(snek_object_t *obj);
-snek_object_t *snek_add(snek_object_t *a, snek_object_t *b);
