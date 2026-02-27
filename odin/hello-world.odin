@@ -1,6 +1,8 @@
 package main
 
 import "core:fmt"
+import "vendor:sdl2"
+
 
 a :: "I'm a const"
 b: string : "also const"
@@ -13,4 +15,12 @@ main :: proc() {
 	fmt.printf("y: %d, x: %d, z: %s, a: %s, b: %s\n", x, y, z, a, b)
 	x, y, z = 2, 2, "Rules"
 	fmt.printf("y: %d, x: %d, z: %s, a: %s, b: %s\n", x, y, z, a, b)
+
+	// simple use of sdl2
+	popup := sdl2.ShowSimpleMessageBox(
+		sdl2.MESSAGEBOX_INFORMATION,
+		"Handmade Hero",
+		"This is Handmade Hero",
+		nil,
+	)
 }
