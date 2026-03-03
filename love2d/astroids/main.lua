@@ -6,7 +6,6 @@ end
 
 function love.draw()
   DrawAstroids()
-  -- drawShip
   DrawShip("fill", Ship_x, Ship_y, 20, 10, Ship_angle)
 end
 
@@ -14,20 +13,29 @@ function love.update(delta)
   UpdateAstroidsPosition(delta)
 end
 
+function CheckAstroids(num_astroids)
+end
+
 function SpawnAstroids(num_astroids)
-  Astroids = {}
+  -- Astroids = {}
   for i = 1, num_astroids do
+    local speed = math.random(1, 50)
+    local angle = math.random() * 2 * math.pi -- 2pi ~ 6.28, i.e. full circle in radians
+
     Astroids[i] = {
       x = math.random(0, love.graphics.getWidth()),
       y = math.random(0, love.graphics.getHeight()),
       radius = math.random(10, 50),
-      speed = math.random(1, 50)
+      x_v = math.sin(angle) * speed,
+      y_v = math.cos(angle) * speed
     }
-
-    print("Astroid spawned at X: " .. Astroids[i].x
+    -- math.sin(angle) * speed
+    print("Astroid spawned at"
+      .. " X: " .. Astroids[i].x
       .. " Y: " .. Astroids[i].y
       .. " Radius: " .. Astroids[i].radius
-      .. " Speed: " .. Astroids[i].speed)
+      .. " Velocity X: " .. Astroids[i].x_v
+      .. " Velocity Y: " .. Astroids[i].y_v)
   end
 
   return Astroids
@@ -42,8 +50,8 @@ end
 
 function UpdateAstroidsPosition(delta)
   for i = 1, #Astroids do
-    Astroids[i].x = Astroids[i].x + Astroids[i].speed * delta
-    Astroids[i].y = Astroids[i].y + Astroids[i].speed * delta
+    Astroids[i].x = Astroids[i].x + Astroids[i].x_v * delta
+    Astroids[i].y = Astroids[i].y + Astroids[i].y_v * delta
   end
 end
 
