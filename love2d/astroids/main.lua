@@ -2,16 +2,28 @@
 function love.load()
   GREET = "Hello Astroids!!"
 
+  Astroid = {
+    x_position = nil,
+    y_position = nil,
+    angle = nil,
+    speed = nil,
+    x_velocity = nil,
+    y_velocity = nil,
+    radius = nil,
+  }
+
   Astroids = SpawnAstroids(10)
 
   Ship = {
+    x_position = 400,
+    y_position = 300,
+    angle = -math.pi / 2,
+    speed = nil,
+    thurst = 0,
+    y_velocity = nil,
+    x_velocity = nil,
     length = 20,
     width = 10,
-    x = 400,
-    y = 300,
-    y_velocity = 0,
-    x_velocity = 0,
-    angle = -math.pi / 2,
   }
 end
 
@@ -22,7 +34,6 @@ end
 
 function love.update(dt)
   UpdateAstroidsPosition(dt)
-  -- TODO: fix here - pick back up
   UpdateShipPosition(dt)
 end
 
@@ -41,7 +52,7 @@ function SpawnAstroids(num_astroids)
     }
     -- math.sin(angle) * speed
     print("Astroid spawned at"
-      .. " X Postion: " .. Astroids[i].x_position
+      .. " X Position: " .. Astroids[i].x_position
       .. " Y Position: " .. Astroids[i].y_position
       .. " Radius: " .. Astroids[i].radius
       .. " X Velocity: " .. Astroids[i].x_velocity
@@ -65,34 +76,45 @@ function UpdateAstroidsPosition(dt)
   end
 end
 
-function DrawShip() -- position, length, width and angle
+function DrawShip()
   local mode = "fill"
-
   love.graphics.push()
-  love.graphics.translate(Ship.x, Ship.y)
+  love.graphics.translate(Ship.x_position, Ship.y_position)
   love.graphics.rotate(Ship.angle)
   love.graphics.polygon(mode, -Ship.length / 2, -Ship.width / 2, -Ship.length / 2, Ship.width / 2, Ship.length / 2, 0)
   love.graphics.pop()
 end
 
-function GetShipPosition()
-
-end
-
 function UpdateShipPosition(dt)
+  local thurst_acceleration = 300
+  local velocity = thurst_acceleration * dt
+
+
+  -- Increase/Decrease Ship Thursts
+  while love.keyboard.isDown("up") do
+    -- increase velocity
+    velocity = velocity + 100
+
+    -- change ship postion
+    Ship.x_position = Ship.x_position + velocity * math.cos(Ship.angle) * dt
+    Ship.y_position = Ship.y_position + velocity * math.sin(Ship.angle) * dt
+    break
+  end
+
+
+  -- Rotate ship angle
   if love.keyboard.isDown("right") then
-    Ship.x = Ship.x + 100 * dt * Ship.angle
+    Ship.angle = Ship.angle + math.pi / 180
   end
-
   if love.keyboard.isDown("left") then
-    Ship.x = Ship.x - 100 * dt
-  end
-
-  if love.keyboard.isDown("up") then
-    Ship.y = Ship.y - 100 * dt
-  end
-
-  if love.keyboard.isDown("down") then
-    Ship.y = Ship.y - 100 * dt
+    Ship.angle = Ship.angle - math.pi / 180
   end
 end
+
+-- Left and right thrust
+-- if love.keyboard.isDown("left") then
+--   Ship.x_position = Ship.x_position + speed * math.sin(Ship.angle) * dt
+-- end
+-- if love.keyboard.isDown("right") then
+--   Ship.x_position = Ship.x_position - speed * math.sin(Ship.angle) * dt
+-- end
