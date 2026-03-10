@@ -1,18 +1,23 @@
 -- TODO: do my natural way then play around with fat structs for optimization
 function love.load()
   GREET = "Hello Astroids!!"
+
   Astroids = SpawnAstroids(10)
 
-  Ship_x = 400
-  Ship_y = 300
-  Ship_y_velocity = 0
-  Ship_x_velocity = 0
-  Ship_angle = -math.pi / 2
+  Ship = {
+    length = 20,
+    width = 10,
+    x = 400,
+    y = 300,
+    y_velocity = 0,
+    x_velocity = 0,
+    angle = -math.pi / 2,
+  }
 end
 
 function love.draw()
   DrawAstroids()
-  DrawShip("fill", Ship_x, Ship_y, 20, 10, Ship_angle)
+  DrawShip()
 end
 
 function love.update(dt)
@@ -28,19 +33,19 @@ function SpawnAstroids(num_astroids)
     local angle = math.random() * 2 * math.pi -- 2pi ~ 6.28, i.e. full circle in radians
 
     Astroids[i] = {
-      x = math.random(0, love.graphics.getWidth()),
-      y = math.random(0, love.graphics.getHeight()),
+      x_position = math.random(0, love.graphics.getWidth()),
+      y_position = math.random(0, love.graphics.getHeight()),
       radius = math.random(10, 50),
       x_velocity = math.cos(angle) * speed,
       y_velocity = math.sin(angle) * speed
     }
     -- math.sin(angle) * speed
     print("Astroid spawned at"
-      .. " X: " .. Astroids[i].x
-      .. " Y: " .. Astroids[i].y
+      .. " X Postion: " .. Astroids[i].x_position
+      .. " Y Position: " .. Astroids[i].y_position
       .. " Radius: " .. Astroids[i].radius
-      .. " Velocity X: " .. Astroids[i].x_v
-      .. " Velocity Y: " .. Astroids[i].y_v)
+      .. " X Velocity: " .. Astroids[i].x_velocity
+      .. " Y Velocity: " .. Astroids[i].y_velocity)
   end
 
   return Astroids
@@ -49,22 +54,24 @@ end
 function DrawAstroids()
   love.graphics.print(GREET, 0, 0)
   for i = 1, #Astroids do
-    love.graphics.circle("line", Astroids[i].x, Astroids[i].y, Astroids[i].radius)
+    love.graphics.circle("line", Astroids[i].x_position, Astroids[i].y_position, Astroids[i].radius)
   end
 end
 
 function UpdateAstroidsPosition(dt)
   for i = 1, #Astroids do
-    Astroids[i].x = Astroids[i].x + Astroids[i].x_v * dt
-    Astroids[i].y = Astroids[i].y + Astroids[i].y_v * dt
+    Astroids[i].x_position = Astroids[i].x_position + Astroids[i].x_velocity * dt
+    Astroids[i].y_position = Astroids[i].y_position + Astroids[i].y_velocity * dt
   end
 end
 
-function DrawShip(mode, x, y, length, width, angle) -- position, length, width and angle
+function DrawShip() -- position, length, width and angle
+  local mode = "fill"
+
   love.graphics.push()
-  love.graphics.translate(x, y)
-  love.graphics.rotate(angle)
-  love.graphics.polygon(mode, -length / 2, -width / 2, -length / 2, width / 2, length / 2, 0)
+  love.graphics.translate(Ship.x, Ship.y)
+  love.graphics.rotate(Ship.angle)
+  love.graphics.polygon(mode, -Ship.length / 2, -Ship.width / 2, -Ship.length / 2, Ship.width / 2, Ship.length / 2, 0)
   love.graphics.pop()
 end
 
@@ -74,18 +81,18 @@ end
 
 function UpdateShipPosition(dt)
   if love.keyboard.isDown("right") then
-    Ship_x = Ship_x + 100 * dt * Ship_angle
+    Ship.x = Ship.x + 100 * dt * Ship.angle
   end
 
   if love.keyboard.isDown("left") then
-    Ship_x = Ship_x - 100 * dt
+    Ship.x = Ship.x - 100 * dt
   end
 
   if love.keyboard.isDown("up") then
-    Ship_y = Ship_y - 100 * dt
+    Ship.y = Ship.y - 100 * dt
   end
 
   if love.keyboard.isDown("down") then
-    Ship_y = Ship_y + 100 * dt
+    Ship.y = Ship.y - 100 * dt
   end
 end
