@@ -1,7 +1,8 @@
+-- TODO: do my natural way then play around with fat structs for optimization
 function love.load()
   GREET = "Hello Astroids!!"
   Astroids = SpawnAstroids(10)
-  Ship_x, Ship_y, Ship_angle = 200, 100, math.pi / 4
+  Ship_x, Ship_y, Ship_angle = 400, 300, -math.pi / 2
 end
 
 function love.draw()
@@ -11,13 +12,12 @@ end
 
 function love.update(delta)
   UpdateAstroidsPosition(delta)
-end
-
-function CheckAstroids(num_astroids)
+  -- TODO: fix here - pick back up
+  MoveShip(Ship_x, Ship_y, Ship_angle, delta)
 end
 
 function SpawnAstroids(num_astroids)
-  -- Astroids = {}
+  Astroids = {}
   for i = 1, num_astroids do
     local speed = math.random(1, 50)
     local angle = math.random() * 2 * math.pi -- 2pi ~ 6.28, i.e. full circle in radians
@@ -48,10 +48,10 @@ function DrawAstroids()
   end
 end
 
-function UpdateAstroidsPosition(delta)
+function UpdateAstroidsPosition(dt)
   for i = 1, #Astroids do
-    Astroids[i].x = Astroids[i].x + Astroids[i].x_v * delta
-    Astroids[i].y = Astroids[i].y + Astroids[i].y_v * delta
+    Astroids[i].x = Astroids[i].x + Astroids[i].x_v * dt
+    Astroids[i].y = Astroids[i].y + Astroids[i].y_v * dt
   end
 end
 
@@ -61,4 +61,26 @@ function DrawShip(mode, x, y, length, width, angle) -- position, length, width a
   love.graphics.rotate(angle)
   love.graphics.polygon(mode, -length / 2, -width / 2, -length / 2, width / 2, length / 2, 0)
   love.graphics.pop()
+end
+
+function GetShipPosition()
+
+end
+
+function MoveShip(x, y, angle, dt)
+  if love.keyboard.isDown("right") then
+    x = x + 100 * dt
+  end
+
+  if love.keyboard.isDown("left") then
+    x = x - 100 * dt
+  end
+
+  if love.keyboard.isDown("up") then
+    y = y - 100 * dt
+  end
+
+  if love.keyboard.isDown("down") then
+    y = y + 100 * dt
+  end
 end
