@@ -18,10 +18,9 @@ function love.load()
     x_position = 400,
     y_position = 300,
     angle = -math.pi / 2,
-    speed = nil,
-    thurst = 0,
-    y_velocity = nil,
-    x_velocity = nil,
+    thrusters_acceleration = 100,
+    y_velocity = 0,
+    x_velocity = 0,
     length = 20,
     width = 10,
   }
@@ -86,21 +85,17 @@ function DrawShip()
 end
 
 function UpdateShipPosition(dt)
-  local thurst_acceleration = 300
-  local velocity = thurst_acceleration * dt
-
-
-  -- Increase/Decrease Ship Thursts
-  while love.keyboard.isDown("up") do
-    -- increase velocity
-    velocity = velocity + 100
-
-    -- change ship postion
-    Ship.x_position = Ship.x_position + velocity * math.cos(Ship.angle) * dt
-    Ship.y_position = Ship.y_position + velocity * math.sin(Ship.angle) * dt
-    break
+  -- Increase velocity on up key press
+  if love.keyboard.isDown("up") then
+    Ship.x_velocity = Ship.x_velocity + Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
+    Ship.y_velocity = Ship.y_velocity + Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
   end
 
+  -- Decrease velocity on down key press
+  if love.keyboard.isDown("down") then
+    Ship.x_velocity = Ship.x_velocity - Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
+    Ship.y_velocity = Ship.y_velocity - Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
+  end
 
   -- Rotate ship angle
   if love.keyboard.isDown("right") then
@@ -109,6 +104,10 @@ function UpdateShipPosition(dt)
   if love.keyboard.isDown("left") then
     Ship.angle = Ship.angle - math.pi / 180
   end
+
+  -- Update ship postion
+  Ship.x_position = Ship.x_position + Ship.x_velocity * dt
+  Ship.y_position = Ship.y_position + Ship.y_velocity * dt
 end
 
 -- Left and right thrust
