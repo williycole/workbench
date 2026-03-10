@@ -2,7 +2,12 @@
 function love.load()
   GREET = "Hello Astroids!!"
   Astroids = SpawnAstroids(10)
-  Ship_x, Ship_y, Ship_angle = 400, 300, -math.pi / 2
+
+  Ship_x = 400
+  Ship_y = 300
+  Ship_y_velocity = 0
+  Ship_x_velocity = 0
+  Ship_angle = -math.pi / 2
 end
 
 function love.draw()
@@ -10,10 +15,10 @@ function love.draw()
   DrawShip("fill", Ship_x, Ship_y, 20, 10, Ship_angle)
 end
 
-function love.update(delta)
-  UpdateAstroidsPosition(delta)
+function love.update(dt)
+  UpdateAstroidsPosition(dt)
   -- TODO: fix here - pick back up
-  MoveShip(Ship_x, Ship_y, Ship_angle, delta)
+  UpdateShipPosition(dt)
 end
 
 function SpawnAstroids(num_astroids)
@@ -26,8 +31,8 @@ function SpawnAstroids(num_astroids)
       x = math.random(0, love.graphics.getWidth()),
       y = math.random(0, love.graphics.getHeight()),
       radius = math.random(10, 50),
-      x_v = math.sin(angle) * speed,
-      y_v = math.cos(angle) * speed
+      x_velocity = math.cos(angle) * speed,
+      y_velocity = math.sin(angle) * speed
     }
     -- math.sin(angle) * speed
     print("Astroid spawned at"
@@ -67,20 +72,20 @@ function GetShipPosition()
 
 end
 
-function MoveShip(x, y, angle, dt)
+function UpdateShipPosition(dt)
   if love.keyboard.isDown("right") then
-    x = x + 100 * dt
+    Ship_x = Ship_x + 100 * dt * Ship_angle
   end
 
   if love.keyboard.isDown("left") then
-    x = x - 100 * dt
+    Ship_x = Ship_x - 100 * dt
   end
 
   if love.keyboard.isDown("up") then
-    y = y - 100 * dt
+    Ship_y = Ship_y - 100 * dt
   end
 
   if love.keyboard.isDown("down") then
-    y = y + 100 * dt
+    Ship_y = Ship_y + 100 * dt
   end
 end
