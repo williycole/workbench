@@ -1,4 +1,16 @@
 -- TODO: do my natural way then play around with fat structs for optimization
+
+-- NOTE: Everything moving in 2D is the same pattern:
+--   velocity_x = cos(angle) * speed
+--   velocity_y = sin(angle) * speed
+--   position_x += velocity_x * dt
+--   position_y += velocity_y * dt
+-- Asteroid, bullet, ship thrust - all of it. Learn this reflex.
+
+-- TODO: When stuck on "how do I move this thing", name what it needs FIRST:
+--   where does it start? what direction? how fast?
+--   Then the code writes itself. Don't reach for the API docs first.
+
 function love.load()
 	GREET = "Hello Astroids!!"
 
@@ -146,13 +158,10 @@ function UpdateShipPosition(dt)
 	Ship.y_position = Ship.y_position + Ship.y_velocity * dt
 end
 
+-- NOTE: A bullet is just an asteroid with a known starting angle (ship.angle).
+-- Took ~2hrs and outside help to see this. It was already written above in SpawnAstroids.
 function UpdateBulletsPosition(dt)
 	for _, bullet in ipairs(Ship.bullets) do
-		-- bullet.x = bullet.x + bullet.dx * dt
-		-- bullet.y = bullet.y + bullet.dy * dt
-		-- bullet.x = bullet.x * dt
-		-- bullet.y = bullet.y * dt
-
 		bullet.x = bullet.x + bullet.x_velocity * dt
 		bullet.y = bullet.y + bullet.y_velocity * dt
 	end
