@@ -99,7 +99,15 @@ function UpdateAstroidsPosition(dt)
 	for i = 1, #Astroids do
 		Astroids[i].x_position = Astroids[i].x_position + Astroids[i].x_velocity * dt
 		Astroids[i].y_position = Astroids[i].y_position + Astroids[i].y_velocity * dt
+
+		-- Helpr func for managing bullet and astroid collisions
+		-- if any bullets xys are the same as a bullets, then turn the astroid red
+		for _, bullet in ipairs(Ship.bullets) do
+			if bullet.x == Astroids[i].x_position and bullet.y == Astroids[i].y_position then
+			end
+		end
 	end
+	return Astroids
 end
 
 function DrawShip()
