@@ -1,119 +1,165 @@
 -- TODO: do my natural way then play around with fat structs for optimization
 function love.load()
-  GREET = "Hello Astroids!!"
+	GREET = "Hello Astroids!!"
 
-  Astroid = {
-    x_position = nil,
-    y_position = nil,
-    angle = nil,
-    speed = nil,
-    x_velocity = nil,
-    y_velocity = nil,
-    radius = nil,
-  }
+	Astroid = {
+		x_position = nil,
+		y_position = nil,
+		angle = nil,
+		speed = nil,
+		x_velocity = nil,
+		y_velocity = nil,
+		radius = nil,
+	}
 
-  Astroids = SpawnAstroids(10)
+	Astroids = SpawnAstroids(10)
 
-  Ship = {
-    x_position = 400,
-    y_position = 300,
-    angle = -math.pi / 2,
-    thrusters_acceleration = 100,
-    y_velocity = 0,
-    x_velocity = 0,
-    length = 20,
-    width = 10,
-  }
+	Ship = {
+		x_position = 400,
+		y_position = 300,
+		angle = -math.pi / 2,
+		thrusters_acceleration = 100,
+		y_velocity = 0,
+		x_velocity = 0,
+		length = 20,
+		width = 10,
+		gun = {
+			angle = 0,
+			x_postion = 0,
+			y_postion = 0,
+		},
+		bullets = {},
+	}
 end
 
 function love.draw()
-  DrawAstroids()
-  DrawShip()
+	DrawAstroids()
+	DrawShip()
+	DrawBullets()
 end
 
 function love.update(dt)
-  UpdateAstroidsPosition(dt)
-  UpdateShipPosition(dt)
+	UpdateAstroidsPosition(dt)
+	UpdateShipPosition(dt)
+	UpdateBulletsPosition(dt)
 end
 
 function SpawnAstroids(num_astroids)
-  Astroids = {}
-  for i = 1, num_astroids do
-    local speed = math.random(1, 50)
-    local angle = math.random() * 2 * math.pi -- 2pi ~ 6.28, i.e. full circle in radians
+	Astroids = {}
+	for i = 1, num_astroids do
+		local speed = math.random(1, 50)
+		local angle = math.random() * 2 * math.pi -- 2pi ~ 6.28, i.e. full circle in radians
 
-    Astroids[i] = {
-      x_position = math.random(0, love.graphics.getWidth()),
-      y_position = math.random(0, love.graphics.getHeight()),
-      radius = math.random(10, 50),
-      x_velocity = math.cos(angle) * speed,
-      y_velocity = math.sin(angle) * speed
-    }
-    -- math.sin(angle) * speed
-    print("Astroid spawned at"
-      .. " X Position: " .. Astroids[i].x_position
-      .. " Y Position: " .. Astroids[i].y_position
-      .. " Radius: " .. Astroids[i].radius
-      .. " X Velocity: " .. Astroids[i].x_velocity
-      .. " Y Velocity: " .. Astroids[i].y_velocity)
-  end
+		Astroids[i] = {
+			x_position = math.random(0, love.graphics.getWidth()),
+			y_position = math.random(0, love.graphics.getHeight()),
+			radius = math.random(10, 50),
+			x_velocity = math.cos(angle) * speed,
+			y_velocity = math.sin(angle) * speed,
+		}
+		-- math.sin(angle) * speed
+		print(
+			"Astroid spawned at"
+				.. " X Position: "
+				.. Astroids[i].x_position
+				.. " Y Position: "
+				.. Astroids[i].y_position
+				.. " Radius: "
+				.. Astroids[i].radius
+				.. " X Velocity: "
+				.. Astroids[i].x_velocity
+				.. " Y Velocity: "
+				.. Astroids[i].y_velocity
+		)
+	end
 
-  return Astroids
+	return Astroids
 end
 
 function DrawAstroids()
-  love.graphics.print(GREET, 0, 0)
-  for i = 1, #Astroids do
-    love.graphics.circle("line", Astroids[i].x_position, Astroids[i].y_position, Astroids[i].radius)
-  end
+	love.graphics.print(GREET, 0, 0)
+	for i = 1, #Astroids do
+		love.graphics.circle("line", Astroids[i].x_position, Astroids[i].y_position, Astroids[i].radius)
+	end
 end
 
 function UpdateAstroidsPosition(dt)
-  for i = 1, #Astroids do
-    Astroids[i].x_position = Astroids[i].x_position + Astroids[i].x_velocity * dt
-    Astroids[i].y_position = Astroids[i].y_position + Astroids[i].y_velocity * dt
-  end
+	for i = 1, #Astroids do
+		Astroids[i].x_position = Astroids[i].x_position + Astroids[i].x_velocity * dt
+		Astroids[i].y_position = Astroids[i].y_position + Astroids[i].y_velocity * dt
+	end
 end
 
 function DrawShip()
-  local mode = "fill"
-  love.graphics.push()
-  love.graphics.translate(Ship.x_position, Ship.y_position)
-  love.graphics.rotate(Ship.angle)
-  love.graphics.polygon(mode, -Ship.length / 2, -Ship.width / 2, -Ship.length / 2, Ship.width / 2, Ship.length / 2, 0)
-  love.graphics.pop()
+	local mode = "fill"
+	love.graphics.push()
+	love.graphics.translate(Ship.x_position, Ship.y_position)
+	love.graphics.rotate(Ship.angle)
+	love.graphics.polygon(mode, -Ship.length / 2, -Ship.width / 2, -Ship.length / 2, Ship.width / 2, Ship.length / 2, 0)
+	love.graphics.pop()
+end
+
+local function getFrontPosition(ship)
+	local frontX = ship.x_position + (ship.length / 2) * math.cos(ship.angle)
+	local frontY = ship.y_position + (ship.length / 2) * math.sin(ship.angle)
+	return frontX, frontY
 end
 
 function UpdateShipPosition(dt)
-  -- Increase velocity on up key press
-  if love.keyboard.isDown("up") then
-    Ship.x_velocity = Ship.x_velocity + Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
-    Ship.y_velocity = Ship.y_velocity + Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
-  end
+	-- update gun postions
+	Ship.gun.x_postion, Ship.gun.y_postion = getFrontPosition(Ship)
 
-  -- Decrease velocity on down key press
-  if love.keyboard.isDown("down") then
-    Ship.x_velocity = Ship.x_velocity - Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
-    Ship.y_velocity = Ship.y_velocity - Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
-  end
+	if love.keyboard.isDown("space") then
+		local newBullet = {
+			x = Ship.gun.x_postion,
+			y = Ship.gun.y_postion,
+			angle = Ship.angle,
+			speed = 100,
+			x_velocity = math.cos(Ship.angle) * 100,
+			y_velocity = math.sin(Ship.angle) * 100,
+		}
+		table.insert(Ship.bullets, newBullet)
+	end
 
-  -- Rotate ship angle
-  if love.keyboard.isDown("right") then
-    Ship.angle = Ship.angle + math.pi / 180
-  end
-  if love.keyboard.isDown("left") then
-    Ship.angle = Ship.angle - math.pi / 180
-  end
+	-- Increase velocity on up key press
+	if love.keyboard.isDown("up") then
+		Ship.x_velocity = Ship.x_velocity + Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
+		Ship.y_velocity = Ship.y_velocity + Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
+	end
 
-  -- Update ship postion
-  Ship.x_position = Ship.x_position + Ship.x_velocity * dt
-  Ship.y_position = Ship.y_position + Ship.y_velocity * dt
+	-- Decrease velocity on down key press
+	if love.keyboard.isDown("down") then
+		Ship.x_velocity = Ship.x_velocity - Ship.thrusters_acceleration * math.cos(Ship.angle) * dt
+		Ship.y_velocity = Ship.y_velocity - Ship.thrusters_acceleration * math.sin(Ship.angle) * dt
+	end
+
+	-- Rotate ship angle
+	if love.keyboard.isDown("right") then
+		Ship.angle = Ship.angle + math.pi / 180
+	end
+	if love.keyboard.isDown("left") then
+		Ship.angle = Ship.angle - math.pi / 180
+	end
+
+	-- Update ship postion
+	Ship.x_position = Ship.x_position + Ship.x_velocity * dt
+	Ship.y_position = Ship.y_position + Ship.y_velocity * dt
 end
 
--- Left and right thrust
--- if love.keyboard.isDown("left") then
---   Ship.x_position = Ship.x_position + speed * math.sin(Ship.angle) * dt
--- end
--- if love.keyboard.isDown("right") then
---   Ship.x_position = Ship.x_position - speed * math.sin(Ship.angle) * dt
--- end
+function UpdateBulletsPosition(dt)
+	for _, bullet in ipairs(Ship.bullets) do
+		-- bullet.x = bullet.x + bullet.dx * dt
+		-- bullet.y = bullet.y + bullet.dy * dt
+		-- bullet.x = bullet.x * dt
+		-- bullet.y = bullet.y * dt
+
+		bullet.x = bullet.x + bullet.x_velocity * dt
+		bullet.y = bullet.y + bullet.y_velocity * dt
+	end
+end
+
+function DrawBullets()
+	for i, bullet in ipairs(Ship.bullets) do
+		love.graphics.rectangle("fill", bullet.x, bullet.y, 3, 3)
+	end
+end
