@@ -1,4 +1,6 @@
 -- TODO: do my natural way then play around with fat structs for optimization
+-- Helper func for managing bullet and astroid collisions
+-- if any bullets xys are the same as a bullets, then turn the astroid red
 
 -- NOTE: Everything moving in 2D is the same pattern:
 --   velocity_x = cos(angle) * speed
@@ -11,8 +13,11 @@
 --   where does it start? what direction? how fast?
 --   Then the code writes itself. Don't reach for the API docs first.
 
+-- NOTE: initial state values
 function love.load()
-	GREET = "Hello Astroids!!"
+	SCORE_CAP = 15
+	SCORE_COUNT = 0
+	GAME_MESSAGE = "SCORE: "
 
 	Astroid = {
 		x_position = nil,
@@ -44,16 +49,56 @@ function love.load()
 	}
 end
 
+--NOTE: For camere and inital drawings
 function love.draw()
+	love.graphics.print(GAME_MESSAGE .. SCORE_COUNT, 0, 0)
 	DrawAstroids()
 	DrawShip()
 	DrawBullets()
 end
 
+-- helper func for bullet collisons
+local function checkBulletAstroidCollision(bullet, asteroid)
+	local dx = bullet.x - asteroid.x_position
+	local dy = bullet.y - asteroid.y_position
+	local distance = math.sqrt(dx * dx + dy * dy)
+	return distance < asteroid.radius
+end
+
+-- helper func for astroid collisons
+-- local function checkShipAstroidCollision(ship, asteroid)
+-- 	local dx = ship.x - asteroid.x_position
+-- 	local dy = bullet.y - asteroid.y_position
+-- 	local distance = math.sqrt(dx * dx + dy * dy)
+-- 	return distance < asteroid.radius
+-- end
+
+--NOTE: For game state changes
 function love.update(dt)
 	UpdateAstroidsPosition(dt)
 	UpdateShipPosition(dt)
 	UpdateBulletsPosition(dt)
+
+	for i = #Ship.bullets, 1, -1 do
+		for j = #Astroids, 1, -1 do
+			if checkBulletAstroidCollision(Ship.bullets[i], Astroids[j]) then
+				table.remove(Ship.bullets, i)
+				table.remove(Astroids, j)
+				SCORE_COUNT = SCORE_COUNT + 1
+				break
+			end
+		end
+	end
+
+	-- Add score check here also to win after a certain score by
+	-- stopping astroid spawning
+	if #Astroids <= 5 and SCORE_COUNT < SCORE_CAP then
+		Astroids = SpawnAstroids(10)
+	end
+
+	if SCORE_COUNT >= SCORE_CAP then
+		GAME_MESSAGE = "YOU WIN!!!"
+	end
 end
 
 function SpawnAstroids(num_astroids)
@@ -89,7 +134,6 @@ function SpawnAstroids(num_astroids)
 end
 
 function DrawAstroids()
-	love.graphics.print(GREET, 0, 0)
 	for i = 1, #Astroids do
 		love.graphics.circle("line", Astroids[i].x_position, Astroids[i].y_position, Astroids[i].radius)
 	end
@@ -99,13 +143,6 @@ function UpdateAstroidsPosition(dt)
 	for i = 1, #Astroids do
 		Astroids[i].x_position = Astroids[i].x_position + Astroids[i].x_velocity * dt
 		Astroids[i].y_position = Astroids[i].y_position + Astroids[i].y_velocity * dt
-
-		-- Helpr func for managing bullet and astroid collisions
-		-- if any bullets xys are the same as a bullets, then turn the astroid red
-		for _, bullet in ipairs(Ship.bullets) do
-			if bullet.x == Astroids[i].x_position and bullet.y == Astroids[i].y_position then
-			end
-		end
 	end
 	return Astroids
 end
@@ -166,7 +203,7 @@ function UpdateShipPosition(dt)
 	Ship.y_position = Ship.y_position + Ship.y_velocity * dt
 end
 
--- NOTE: A bullet is just an asteroid with a known starting angle (ship.angle).
+-- A bullet is just an asteroid with a known starting angle (ship.angle).
 -- Took ~2hrs and outside help to see this. It was already written above in SpawnAstroids.
 function UpdateBulletsPosition(dt)
 	for _, bullet in ipairs(Ship.bullets) do
