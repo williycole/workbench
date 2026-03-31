@@ -1,8 +1,8 @@
-# handle_result = fn
-#   {:ok, result} -> IO.puts("Handling result...")
-#   {:ok, _} -> IO.puts("This would be never run as previous will be matched beforehand.")
-#   {:error} -> IO.puts("An error has occurred!")
-# end
+handle_result = fn
+  {:ok, result} -> IO.puts("Handling result...")
+  {:ok, _} -> IO.puts("This would be never run as previous will be matched beforehand.")
+  {:error} -> IO.puts("An error has occurred!")
+end
 
 # NOTE: Pattern matching and recursion
 defmodule Length do
