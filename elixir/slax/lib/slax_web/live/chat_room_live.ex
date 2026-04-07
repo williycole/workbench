@@ -4,7 +4,9 @@ defmodule SlaxWeb.ChatRoomLive do
 
   def render(assigns) do
     ~H"""
-    <div>Welcome to the chat!</div>
+    <Layouts.app flash={@flash}>
+      <div>Welcome to the chat!</div>
+    </Layouts.app>
     """
   end
 end
