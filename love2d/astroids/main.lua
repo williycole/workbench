@@ -15,9 +15,11 @@
 
 -- NOTE: initial state values
 function love.load()
-	SCORE_CAP = 15
-	SCORE_COUNT = 0
-	GAME_MESSAGE = "SCORE: "
+	GameScoreState = {
+		ScoreLimit = 15,
+		Score = 0,
+		GameMessage = "SCORE: ",
+	}
 
 	Astroid = {
 		x_position = nil,
@@ -31,6 +33,7 @@ function love.load()
 
 	Astroids = SpawnAstroids(10)
 
+	COOLDOWN_TIMER = 0.5
 	Ship = {
 		x_position = 400,
 		y_position = 300,
@@ -46,12 +49,13 @@ function love.load()
 			y_postion = 0,
 		},
 		bullets = {},
+		rateOfFire = COOLDOWN_TIMER,
 	}
 end
 
---NOTE: For camere and inital drawings
+--NOTE: For camera and inital drawings
 function love.draw()
-	love.graphics.print(GAME_MESSAGE .. SCORE_COUNT, 0, 0)
+	love.graphics.print(GameScoreState.GameMessage .. GameScoreState.Score, 0, 0)
 	DrawAstroids()
 	DrawShip()
 	DrawBullets()
@@ -73,18 +77,20 @@ end
 -- 	return distance < asteroid.radius
 -- end
 
---NOTE: For game state changes
+-- NOTE: For game state changes
 function love.update(dt)
 	UpdateAstroidsPosition(dt)
 	UpdateShipPosition(dt)
 	UpdateBulletsPosition(dt)
+
+	Ship.rateOfFire = Ship.rateOfFire - dt
 
 	for i = #Ship.bullets, 1, -1 do
 		for j = #Astroids, 1, -1 do
 			if checkBulletAstroidCollision(Ship.bullets[i], Astroids[j]) then
 				table.remove(Ship.bullets, i)
 				table.remove(Astroids, j)
-				SCORE_COUNT = SCORE_COUNT + 1
+				GameScoreState.Score = GameScoreState.Score + 1
 				break
 			end
 		end
@@ -92,12 +98,12 @@ function love.update(dt)
 
 	-- Add score check here also to win after a certain score by
 	-- stopping astroid spawning
-	if #Astroids <= 5 and SCORE_COUNT < SCORE_CAP then
+	if #Astroids <= 5 and GameScoreState.Score < GameScoreState.ScoreLimit then
 		Astroids = SpawnAstroids(10)
 	end
 
-	if SCORE_COUNT >= SCORE_CAP then
-		GAME_MESSAGE = "YOU WIN!!!"
+	if GameScoreState.Score >= GameScoreState.ScoreLimit then
+		GameScoreState.GameMessage = "YOU WIN!!!"
 	end
 end
 
@@ -166,7 +172,7 @@ function UpdateShipPosition(dt)
 	-- update gun postions
 	Ship.gun.x_postion, Ship.gun.y_postion = getFrontPosition(Ship)
 
-	if love.keyboard.isDown("space") then
+	if love.keyboard.isDown("space") and Ship.rateOfFire <= 0 then
 		local newBullet = {
 			x = Ship.gun.x_postion,
 			y = Ship.gun.y_postion,
@@ -176,6 +182,7 @@ function UpdateShipPosition(dt)
 			y_velocity = math.sin(Ship.angle) * 100,
 		}
 		table.insert(Ship.bullets, newBullet)
+		Ship.rateOfFire = COOLDOWN_TIMER
 	end
 
 	-- Increase velocity on up key press
