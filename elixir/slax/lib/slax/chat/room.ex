@@ -7,6 +7,9 @@ defmodule Slax.Chat.Room do
     field :topic, :string
 
     timestamps(type: :utc_datetime)
+    # above is shorthand for below
+    # field :inserted_at, :utc_datetime
+    # field :updated_at, :utc_datetime
   end
 
   @doc false
