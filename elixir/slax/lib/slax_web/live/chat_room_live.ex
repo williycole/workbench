@@ -14,8 +14,17 @@ defmodule SlaxWeb.ChatRoomLive do
             <h1 class="text-sm font-bold leading-none">
               #{@room.name}
             </h1>
-            <div class="text-xs leading-none h-3.5">
-              {@room.topic}
+            <%!--NOTE:  here you can see embedded elixier with css next to it
+                        its all wrapped in a list and liveview handles i --%>
+            <div
+              class={["text-xs leading-none h-3.5", @hide_topic? && "text-slate-600"]}
+              phx-click="toggle-topic"
+            >
+              <%= if @hide_topic? do %>
+                [Topic hidden]
+              <% else %>
+                {@room.topic}
+              <% end %>
             </div>
           </div>
         </div>
@@ -29,6 +38,10 @@ defmodule SlaxWeb.ChatRoomLive do
 
     socket = socket |> assign(:room, room)
 
-    {:ok, assign(socket, :room, room)}
+    {:ok, assign(socket, hide_topic?: false, room: room)}
+  end
+
+  def handle_event("toggle-topic", _params, socket) do
+    {:noreply, assign(socket, hide_topic?: !socket.assigns.hide_topic?)}
   end
 end
