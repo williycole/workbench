@@ -25,8 +25,8 @@ defmodule SlaxWeb.ChatRoomLive.Edit do
           phx-change="validate-room"
           phx-submit="save-room"
         >
-          <.input field={@form[:name]} type="text" label="Name" />
-          <.input field={@form[:topic]} type="text" label="Topic" />
+          <.input field={@form[:name]} type="text" label="Name" phx-debounce />
+          <.input field={@form[:topic]} type="text" label="Topic" phx-debounce />
           <div class="mt-2 flex items-center justify-between gap-6">
             <.button phx-disable-with="Saving..." class="btn btn-primary w-full">Save</.button>
           </div>
