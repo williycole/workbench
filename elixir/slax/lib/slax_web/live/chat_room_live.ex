@@ -53,7 +53,7 @@ defmodule SlaxWeb.ChatRoomLive do
             </div>
           </div>
           <ul class="relative z-10 flex items-center gap-4 justify-end">
-            <li class="text-sm">{@current_scope.user.email}</li>
+            <li class="text-sm">{username(@current_scope.user)}</li>
             <li><.link href={~p"/users/settings"} class="text-sm font-semibold">Settings</.link></li>
             <li>
               <.link href={~p"/users/log-out"} method="delete" class="text-sm font-semibold">
@@ -80,13 +80,17 @@ defmodule SlaxWeb.ChatRoomLive do
       <div class="ml-2">
         <div class="-mt-1">
           <.link class="text-sm font-semibold hover:underline">
-            <span>User</span>
+            <span>{username(@message.user)}</span>
           </.link>
           <p class="text-sm">{@message.body}</p>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp username(user) do
+    user.email |> String.split("@") |> List.first() |> String.capitalize()
   end
 
   attr :active, :boolean, required: true
