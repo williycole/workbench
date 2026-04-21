@@ -1,9 +1,16 @@
 defmodule Slax.Chat do
+  alias Slax.Accounts.Scope
   alias Slax.Chat.Message
   alias Slax.Chat.Room
   alias Slax.Repo
 
   import Ecto.Query
+
+  def delete_message_by_id(id, %Scope{user: user}) do
+    message = Repo.get_by!(Message, id: id, user_id: user.id)
+
+    Repo.delete(message)
+  end
 
   def change_message(message, attrs \\ %{}, scope) do
     Message.changeset(message, attrs, scope)
