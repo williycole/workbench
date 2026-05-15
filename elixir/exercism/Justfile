@@ -1,0 +1,116 @@
+token := `jq -r '.token' ~/.config/exercism/user.json`
+api := "https://exercism.org/api/v2/tracks/elixir/exercises"
+workspace := `jq -r '.workspace' ~/.config/exercism/user.json`
+current_file := `jq -r '.workspace' ~/.config/exercism/user.json` + "/.current"
+
+_current:
+    #!/usr/bin/env bash
+    if [ ! -f "{{current_file}}" ]; then
+        echo "No current exercise set. Run 'just next' or 'just get <slug>'." >&2
+        exit 1
+    fi
+    cat "{{current_file}}"
+
+# list all exercises with unlock status
+list:
+    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
+      | jq -r '.exercises[] | [if .is_unlocked then "YES" else "no" end, .type, .difficulty, .slug] | @tsv' \
+      | column -t -s $'\t'
+
+# list only unlocked exercises
+list-unlocked:
+    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
+      | jq -r '.exercises[] | select(.is_unlocked) | [.type, .difficulty, .slug] | @tsv' \
+      | column -t -s $'\t'
+
+# list only locked exercises
+list-locked:
+    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
+      | jq -r '.exercises[] | select(.is_unlocked | not) | [.type, .difficulty, .slug] | @tsv' \
+      | column -t -s $'\t'
+
+# download and open the next unlocked exercise not yet submitted
+next:
+    #!/usr/bin/env bash
+    unlocked=$(curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
+      | jq -r '.exercises[] | select(.is_unlocked) | .slug')
+    submitted=""
+    page=1
+    while true; do
+        resp=$(curl -s -H "Authorization: Bearer {{token}}" "https://exercism.org/api/v2/solutions?track_id=elixir&page=$page")
+        submitted+=$'\n'$(echo "$resp" | jq -r '.results[] | select(.track.slug == "elixir") | .exercise.slug')
+        total_pages=$(echo "$resp" | jq '.meta.total_pages')
+        [ "$page" -ge "$total_pages" ] && break
+        ((page++))
+    done
+    slug=""
+    while IFS= read -r s; do
+        echo "$submitted" | grep -qx "$s" || { slug="$s"; break; }
+    done <<< "$unlocked"
+    if [ -z "$slug" ]; then
+        echo "No new unlocked exercises — submit what you have to unlock more."
+        exit 0
+    fi
+    echo "→ $slug"
+    [ ! -d "{{workspace}}/elixir/$slug" ] && exercism download --track=elixir --exercise="$slug"
+    echo "$slug" > "{{current_file}}"
+    file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
+    [ -n "$file" ] && nvim "$file" < /dev/tty
+
+# show the instructions for the current exercise
+docs:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    bat "{{workspace}}/elixir/$slug/README.md"
+
+# show hints for the current exercise
+hints:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    f="{{workspace}}/elixir/$slug/HINTS.md"
+    [ -f "$f" ] && bat "$f" || echo "No hints file for this exercise."
+
+# run tests for the current exercise
+test:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    cd "{{workspace}}/elixir/$slug" && mix test
+
+# submit the current exercise
+submit:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
+    exercism submit "$file"
+
+# open current exercise in nvim
+open:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
+    [ -n "$file" ] && nvim "$file" < /dev/tty || echo "No exercises downloaded yet."
+
+# open current exercise on exercism.org to mark complete
+complete:
+    #!/usr/bin/env bash
+    slug=$(cat "{{current_file}}")
+    open "https://exercism.org/tracks/elixir/exercises/$slug"
+
+# download a specific exercise and set it as current: just get <slug>
+get slug:
+    #!/usr/bin/env bash
+    exercism download --track=elixir --exercise={{slug}}
+    echo "{{slug}}" > "{{current_file}}"
+
+# download all currently unlocked exercises
+get-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    slugs=$(curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
+      | jq -r '.exercises[] | select(.is_unlocked) | .slug')
+    count=0
+    for slug in $slugs; do
+        echo "→ $slug"
+        exercism download --track=elixir --exercise="$slug" --force > /dev/null 2>&1 && ((count++))
+    done
+    echo "Done. Downloaded $count exercises."
