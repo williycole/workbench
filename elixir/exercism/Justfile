@@ -41,12 +41,12 @@ list-locked:
 next:
     #!/usr/bin/env bash
     unlocked=$(curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | select(.is_unlocked) | .slug')
+      | jq -r '.exercises[] | select(.is_unlocked and .type == "concept") | .slug')
     submitted=""
     page=1
     while true; do
         resp=$(curl -s -H "Authorization: Bearer {{token}}" "https://exercism.org/api/v2/solutions?track_id=elixir&page=$page")
-        submitted+=$'\n'$(echo "$resp" | jq -r '.results[] | select(.track.slug == "elixir") | .exercise.slug')
+        submitted+=$'\n'$(echo "$resp" | jq -r '.results[] | select(.track.slug == "elixir" and (.status == "completed" or .status == "published")) | .exercise.slug')
         total_pages=$(echo "$resp" | jq '.meta.total_pages')
         [ "$page" -ge "$total_pages" ] && break
         ((page++))
