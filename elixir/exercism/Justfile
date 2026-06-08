@@ -2,14 +2,22 @@ token := `jq -r '.token' ~/.config/exercism/user.json`
 api := "https://exercism.org/api/v2/tracks/elixir/exercises"
 workspace := `jq -r '.workspace' ~/.config/exercism/user.json`
 current_file := `jq -r '.workspace' ~/.config/exercism/user.json` + "/.current"
+invocation_dir := invocation_directory()
 
 _current:
     #!/usr/bin/env bash
-    if [ ! -f "{{current_file}}" ]; then
-        echo "No current exercise set. Run 'just next' or 'just get <slug>'." >&2
-        exit 1
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        if [ ! -f "{{current_file}}" ]; then
+            echo "No current exercise set. Run 'just next' or 'just get <slug>'." >&2
+            exit 1
+        fi
+        cat "{{current_file}}"
     fi
-    cat "{{current_file}}"
+
+
 
 # list all exercises with unlock status
 list:
@@ -60,40 +68,70 @@ next:
 # show the instructions for the current exercise
 docs:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     bat "{{workspace}}/elixir/$slug/README.md"
 
 # show hints for the current exercise
 hints:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     f="{{workspace}}/elixir/$slug/HINTS.md"
     [ -f "$f" ] && bat "$f" || echo "No hints file for this exercise."
 
 # run tests for the current exercise
 test:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     cd "{{workspace}}/elixir/$slug" && mix test
 
 # submit the current exercise
 submit:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
     exercism submit "$file"
 
 # open current exercise in nvim
 open:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
     [ -n "$file" ] && nvim "$file" < /dev/tty || echo "No exercises downloaded yet."
 
 # open current exercise on exercism.org to mark complete
 complete:
     #!/usr/bin/env bash
-    slug=$(cat "{{current_file}}")
+    shopt -s nocasematch
+    if [[ "{{invocation_dir}}" =~ ^"{{workspace}}/elixir/"([^/]+) ]]; then
+        slug="${BASH_REMATCH[1]}"
+    else
+        slug=$(cat "{{current_file}}")
+    fi
     open "https://exercism.org/tracks/elixir/exercises/$slug"
 
 # download a specific exercise and set it as current: just get <slug>
