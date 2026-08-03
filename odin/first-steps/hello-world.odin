@@ -3,7 +3,6 @@ package main
 import "core:fmt"
 import "vendor:sdl2"
 
-
 a :: "I'm a const"
 b: string : "also const"
 x, y: int
@@ -24,3 +23,4 @@ main :: proc() {
 		nil,
 	)
 }
+
