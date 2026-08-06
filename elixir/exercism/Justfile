@@ -1,5 +1,9 @@
-token := `jq -r '.token' ~/.config/exercism/user.json`
-api := "https://exercism.org/api/v2/tracks/elixir/exercises"
+# NB: exercism.org/api/v2 (the website API) is now Cloudflare bot-walled — curl gets an
+# HTML "Just a moment..." challenge, not JSON. The exercise catalog now comes from the
+# public track repo (no auth). Per-user unlock/submitted status is no longer scriptable,
+# so recipes use "downloaded locally" as the practical proxy. Download/submit still use
+# the official `exercism` CLI (different host, api.exercism.io — not walled).
+catalog := "https://raw.githubusercontent.com/exercism/elixir/main/config.json"
 workspace := `jq -r '.workspace' ~/.config/exercism/user.json`
 current_file := `jq -r '.workspace' ~/.config/exercism/user.json` + "/.current"
 invocation_dir := invocation_directory()
@@ -19,50 +23,41 @@ _current:
 
 
 
-# list all exercises with unlock status
+# list all exercises; ✓ = downloaded locally (unlock status no longer available — see header)
 list:
-    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | [if .is_unlocked then "YES" else "no" end, .type, .difficulty, .slug] | @tsv' \
+    #!/usr/bin/env bash
+    curl -s "{{catalog}}" \
+      | jq -r '(.exercises.concept[] | [.slug, "concept"]), (.exercises.practice[] | [.slug, "practice"]) | @tsv' \
+      | while IFS=$'\t' read -r slug type; do
+          [ -d "{{workspace}}/elixir/$slug" ] && dl="✓" || dl="·"
+          printf '%s\t%s\t%s\n' "$dl" "$type" "$slug"
+        done \
       | column -t -s $'\t'
 
-# list only unlocked exercises
-list-unlocked:
-    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | select(.is_unlocked) | [.type, .difficulty, .slug] | @tsv' \
-      | column -t -s $'\t'
-
-# list only locked exercises
-list-locked:
-    curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | select(.is_unlocked | not) | [.type, .difficulty, .slug] | @tsv' \
-      | column -t -s $'\t'
-
-# download and open the next unlocked exercise not yet submitted
+# download + open the next unlocked concept exercise you don't have yet (syllabus order).
+# The CLI enforces unlock, so we walk the syllabus and skip anything it reports as locked.
 next:
     #!/usr/bin/env bash
-    unlocked=$(curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | select(.is_unlocked and .type == "concept") | .slug')
-    submitted=""
-    page=1
-    while true; do
-        resp=$(curl -s -H "Authorization: Bearer {{token}}" "https://exercism.org/api/v2/solutions?track_id=elixir&page=$page")
-        submitted+=$'\n'$(echo "$resp" | jq -r '.results[] | select(.track.slug == "elixir" and (.status == "completed" or .status == "published")) | .exercise.slug')
-        total_pages=$(echo "$resp" | jq '.meta.total_pages')
-        [ "$page" -ge "$total_pages" ] && break
-        ((page++))
-    done
-    slug=""
-    while IFS= read -r s; do
-        echo "$submitted" | grep -qx "$s" || { slug="$s"; break; }
-    done <<< "$unlocked"
-    if [ -z "$slug" ]; then
-        echo "No new unlocked exercises — submit what you have to unlock more."
+    concepts=$(curl -s "{{catalog}}" | jq -r '.exercises.concept[].slug' 2>/dev/null)
+    [ -z "$concepts" ] && { echo "Could not fetch track catalog (network?)."; exit 1; }
+    picked=""
+    while IFS= read -r slug; do
+        [ -d "{{workspace}}/elixir/$slug" ] && continue          # already downloaded
+        echo "→ trying $slug"
+        if out=$(exercism download --track=elixir --exercise="$slug" 2>&1); then
+            picked="$slug"; break
+        elif echo "$out" | grep -qi "not unlocked"; then
+            echo "  locked — skipping"; continue
+        else
+            echo "$out"; exit 1                                  # real error (network/auth)
+        fi
+    done <<< "$concepts"
+    if [ -z "$picked" ]; then
+        echo "No unlocked concept exercises left to download. Try a practice one: just get <slug>"
         exit 0
     fi
-    echo "→ $slug"
-    [ ! -d "{{workspace}}/elixir/$slug" ] && exercism download --track=elixir --exercise="$slug"
-    echo "$slug" > "{{current_file}}"
-    file=$(find "{{workspace}}/elixir/$slug/lib" -name "*.ex" | head -1)
+    echo "$picked" > "{{current_file}}"
+    file=$(find "{{workspace}}/elixir/$picked/lib" -name "*.ex" | head -1)
     [ -n "$file" ] && nvim "$file" < /dev/tty
 
 # show the instructions for the current exercise
@@ -74,7 +69,7 @@ docs:
     else
         slug=$(cat "{{current_file}}")
     fi
-    bat "{{workspace}}/elixir/$slug/README.md"
+    glow -p "{{workspace}}/elixir/$slug/README.md"
 
 # show hints for the current exercise
 hints:
@@ -86,7 +81,7 @@ hints:
         slug=$(cat "{{current_file}}")
     fi
     f="{{workspace}}/elixir/$slug/HINTS.md"
-    [ -f "$f" ] && bat "$f" || echo "No hints file for this exercise."
+    [ -f "$f" ] && glow -p "$f" || echo "No hints file for this exercise."
 
 # run tests for the current exercise
 test:
@@ -140,15 +135,19 @@ get slug:
     exercism download --track=elixir --exercise={{slug}}
     echo "{{slug}}" > "{{current_file}}"
 
-# download all currently unlocked exercises
+# download all concept exercises (the elixir syllabus); skips ones already present
 get-all:
     #!/usr/bin/env bash
-    set -euo pipefail
-    slugs=$(curl -s -H "Authorization: Bearer {{token}}" "{{api}}" \
-      | jq -r '.exercises[] | select(.is_unlocked) | .slug')
+    slugs=$(curl -s "{{catalog}}" | jq -r '.exercises.concept[].slug' 2>/dev/null)
+    [ -z "$slugs" ] && { echo "Could not fetch track catalog (network?)."; exit 1; }
     count=0
     for slug in $slugs; do
+        [ -d "{{workspace}}/elixir/$slug" ] && continue
         echo "→ $slug"
-        exercism download --track=elixir --exercise="$slug" --force > /dev/null 2>&1 && ((count++))
+        if exercism download --track=elixir --exercise="$slug" --force > /dev/null 2>&1; then
+            count=$((count+1))
+        else
+            echo "  (skipped — locked or download failed)"
+        fi
     done
-    echo "Done. Downloaded $count exercises."
+    echo "Done. Downloaded $count new exercises."
